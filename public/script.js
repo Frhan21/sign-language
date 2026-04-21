@@ -309,7 +309,7 @@ hands.onResults((results) => {
         const gesture = getLabel(p[0]);
 
         // Selalu update akurasi untuk memberikan feedback real-time
-        document.getElementById("confidence-result").innerText = `Akurasi: ${(
+        document.getElementById("confidence-badge").innerText = `Akurasi: ${(
           maxConfidence * 100
         ).toFixed(2)}%`;
 
@@ -332,13 +332,19 @@ hands.onResults((results) => {
           lastUpdateTime = Date.now();
 
           // Perbaiki bug update kalimat dan panggil MQTT
-          document.getElementById("sentence-result").innerText =
-            "Kalimat: " + sentence.trim();
+          document.getElementById("sentence-result").innerText = sentence.trim();
           sendPrediction(majority);
         }
 
-        document.getElementById("gesture-result").innerText =
-          "Gesture: " + majority;
+        // Update highlight letter with pop animation
+        const gestureHighlight = document.getElementById("gesture-highlight");
+        if (gestureHighlight.innerText !== majority) {
+          gestureHighlight.innerText = majority;
+          gestureHighlight.classList.remove("pop");
+          void gestureHighlight.offsetWidth; // trigger reflow
+          gestureHighlight.classList.add("pop");
+        }
+        document.getElementById("gesture-result").innerText = "Gesture Terakhir: " + majority;
         canvasCtx.fillText(
           `${majority} (${(maxConfidence * 100).toFixed(0)}%)`,
           x,
@@ -367,16 +373,39 @@ function getMajorityVote(arr) {
 }
 
 //---------------------Kalimat dan suara ----------------/
+let isSpeaking = false;
+
 function resetSentence() {
   sentence = "";
   lastGesture = "";
-  document.getElementById("sentence-result").innerText = "Kalimat:";
+  document.getElementById("sentence-result").innerText = "";
+  if (speechSynthesis.speaking) {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+  }
 }
 
 function speakSentence() {
+  if (!sentence.trim()) return;
+  if (speechSynthesis.speaking && speechSynthesis.paused) {
+    speechSynthesis.resume();
+    isSpeaking = true;
+    return;
+  }
+  if (speechSynthesis.speaking && !speechSynthesis.paused) {
+    return; // Already playing
+  }
   const utterance = new SpeechSynthesisUtterance(sentence.trim());
   utterance.lang = "id-ID";
   speechSynthesis.speak(utterance);
+  isSpeaking = true;
+}
+
+function pauseSentence() {
+  if (speechSynthesis.speaking && !speechSynthesis.paused) {
+    speechSynthesis.pause();
+    isSpeaking = false;
+  }
 }
 
 //---------------------Webcam----------------/
@@ -449,7 +478,7 @@ function activateVoiceMode() {
 
   // Update UI
   inputModeStatus.textContent = "Suara Aktif";
-  inputModeStatus.style.color = "#5cb85c"; // Hijau
+  inputModeStatus.className = "status-badge status-voice";
   voiceModeBtn.disabled = true;
   gestureModeBtn.disabled = false;
 
@@ -475,7 +504,7 @@ function activateGestureMode() {
 
   // Update UI
   inputModeStatus.textContent = "Gestur Aktif";
-  inputModeStatus.style.color = "#5bc0de"; // Biru
+  inputModeStatus.className = "status-badge status-gesture";
   voiceModeBtn.disabled = false;
   gestureModeBtn.disabled = true;
 
@@ -492,14 +521,17 @@ function activateGestureMode() {
 
 // =================== MAIN (inisialisasi utama) ===================
 async function main() {
-  document.getElementById("gesture-result").innerText =
-    "Gesture: Memuat model...";
+  document.getElementById("gesture-result").innerText = "Gesture: Memuat model...";
+  document.getElementById("gesture-highlight").innerText = "...";
+  document.getElementById("input-mode-status").innerText = "Memuat...";
   await getCameras();
   await switchCamera();
   await loadModel();
   gestureModeBtn.disabled = false; // Aktifkan tombol gestur setelah model siap
   camera.start();
   document.getElementById("gesture-result").innerText = "Gesture: -";
+  document.getElementById("gesture-highlight").innerText = "-";
+  document.getElementById("input-mode-status").innerText = "Idle";
 }
 
 main();

@@ -21,9 +21,12 @@ let data;
 const mqttClient = mqtt.connect("mqtt://test.mosquitto.org");
 mqttClient.on("connect", () => {
   console.log("✅ Connected to MQTT broker");
-  mqttClient.subscribe(process.env.MQTT_TOPIC_SUBS, (err) => {
+  const topicSubs = process.env.MQTT_TOPIC_SUBS || "sibi/receive";
+  mqttClient.subscribe(topicSubs, (err) => {
     if (!err)
-      console.log("📥 Subscribed to topic:", process.env.MQTT_TOPIC_SUBS);
+      console.log("📥 Subscribed to topic:", topicSubs);
+    else 
+      console.error("❌ Failed to subscribe:", err);
   });
 });
 mqttClient.on("message", (topic, message) => {
@@ -41,7 +44,7 @@ app.use("/prediction", express.text()); // middleware: menerima text/plain
 
 app.post("/prediction", (req, res) => {
   const payload = req.body;
-  const topic = process.env.MQTT_TOPIC_PUBLISH;
+  const topic = process.env.MQTT_TOPIC_PUBLISH || "sibi/send";
 
   if (!payload) {
     return res.status(400).json({ error: "Payload is required" });

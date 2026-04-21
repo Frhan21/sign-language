@@ -19,52 +19,71 @@
   </head>
 
   <body>
-    <div class="container">
-      <h1>Deteksi Bahasa Isyarat</h1>
+    <div class="app-layout">
+      <!-- Top Header -->
+      <header class="app-header">
+        <h1>Deteksi Bahasa Isyarat</h1>
+        <div class="header-controls">
+          <select id="mode-select">
+            <option value="sibi">SIBI</option>
+            <option value="bisindo">BISINDO</option>
+          </select>
+          <select id="camera-select"></select>
+          <button class="btn-icon" onclick="switchCamera()" title="Ganti Kamera">🔄</button>
+        </div>
+      </header>
 
-      <div class="controls">
-        <label for="mode-select">Pilih Bahasa Isyarat:</label><br />
-        <select id="mode-select">
-          <option value="sibi">SIBI</option>
-          <option value="bisindo">BISINDO</option>
-        </select>
-
-        <label for="camera-select">Pilih Kamera:</label><br />
-        <select id="camera-select"></select>
-      </div>
-
-      <div class="button-group">
-        <button onclick="switchCamera()">🔄 Ganti Kamera</button>
-        <button onclick="resetSentence()">🗑️ Reset Kalimat</button>
-        <button onclick="speakSentence()">🔊 Baca Kalimat</button>
-      </div>
-
-      <div class="input-mode-section">
-        <p><strong>Pilih Mode Input:</strong> <span id="input-mode-status" style="font-weight: bold; color: #d9534f;">(Tidak Ada)</span></p>
-        <button id="voice-mode-btn">🎤 Aktifkan Mode Suara</button>
-        <button id="gesture-mode-btn" disabled>🖐️ Aktifkan Mode Gestur</button>
-      </div>
-
-      <div id="error-container" class="error-message"></div>
-
-      <div class="video-container">
-        <video id="webcam" autoplay playsinline></video>
-        <canvas id="output-canvas"></canvas>
-      </div>
-
-      <div class="output-section">
-        <p id="gesture-result"><strong>Gesture:</strong> -</p>
-        <p id="confidence-result"><strong>Akurasi:</strong> -</p>
-        <p id="sentence-result"><strong>Kalimat:</strong> -</p>
-        <p id="speech-result">
-          <strong>STT:</strong> <i>Menunggu input suara...</i>
-        </p>
-      </div>
-    </div>
+      <!-- Main Content -->
+      <main class="app-main">
+        <!-- Left Side: Video & Input Controls -->
+        <section class="video-section card">
+          <div class="video-wrapper">
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="output-canvas"></canvas>
+            <div id="input-mode-status" class="status-badge status-idle">Memuat...</div>
           </div>
+          <div class="input-controls">
+            <button id="voice-mode-btn" class="btn btn-primary">🎤 Mode Suara</button>
+            <button id="gesture-mode-btn" class="btn btn-primary" disabled>🖐️ Mode Gestur</button>
+          </div>
+        </section>
+
+        <!-- Right Side: Dashboard & Outputs -->
+        <section class="dashboard-section">
+          <!-- Main Highlight for Detected Gesture -->
+          <div class="highlight-card card">
+            <h2 class="card-title">Karakter Terdeteksi</h2>
+            <div class="highlight-content">
+              <div id="gesture-highlight" class="highlight-letter">-</div>
+              <div id="confidence-badge" class="confidence-badge">Akurasi: 0%</div>
+            </div>
+            <p id="gesture-result" class="gesture-text">Gesture: -</p>
+          </div>
+
+          <!-- Sentence & Speech Output -->
+          <div class="output-card card">
+            <div class="card-header">
+              <h2 class="card-title">Kalimat</h2>
+              <div class="action-buttons">
+                <!-- Advanced TTS Controls -->
+                <button class="btn-icon btn-tts" onclick="speakSentence()" title="Mainkan Suara">▶️</button>
+                <button class="btn-icon btn-tts" onclick="pauseSentence()" title="Jeda Suara">⏸️</button>
+                <button class="btn-icon btn-tts" onclick="resetSentence()" title="Hapus Kalimat">🗑️</button>
+              </div>
+            </div>
+            <div id="sentence-result" class="sentence-text"></div>
+            
+            <div class="stt-status">
+              <span id="speech-result"><strong>STT:</strong> <i>Menunggu input suara...</i></span>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <div id="error-container" class="error-toast"></div>
     </div>
 
-    <!-- Tambahkan ini -->
+    <!-- Script -->
     <script src="script.js"></script>
   </body>
 </html>
