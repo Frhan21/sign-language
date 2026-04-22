@@ -24,20 +24,23 @@ if (SpeechRecognition) {
 
   // Handle hasil STT
   recognition.onresult = (event) => {
-    let finalTranscript = "";
     let interimTranscript = "";
 
     for (let i = event.resultIndex; i < event.results.length; ++i) {
       const transcript = event.results[i][0].transcript;
       if (event.results[i].isFinal) {
-        finalTranscript += transcript;
+        // Append finalized text to our global sentence variable
+        sentence += transcript + " ";
+        document.getElementById("sentence-result").innerText = sentence.trim();
+        // Optional: Send recognized text to MQTT
+        sendPrediction(transcript.trim());
       } else {
         interimTranscript += transcript;
       }
     }
 
     const speechResult = document.getElementById("speech-result");
-    speechResult.innerHTML = `STT: ${finalTranscript} <i style="color:gray">${interimTranscript}</i>`;
+    speechResult.innerHTML = `<strong>STT:</strong> <i>${interimTranscript || "Sedang mendengarkan..."}</i>`;
   };
 
   // Handle error STT
@@ -469,7 +472,7 @@ const gestureModeBtn = document.getElementById("gesture-mode-btn");
 const inputModeStatus = document.getElementById("input-mode-status");
 const speechResultEl = document.getElementById("speech-result");
 const gestureResultEl = document.getElementById("gesture-result");
-const confidenceResultEl = document.getElementById("confidence-result");
+const confidenceResultEl = document.getElementById("confidence-badge");
 
 function activateVoiceMode() {
   if (inputMode === "voice") return; // Sudah aktif
