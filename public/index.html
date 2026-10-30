@@ -1,89 +1,74 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Deteksi Bahasa Isyarat</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f5f8ff">
+  <title>Isyarat — belajar dan terjemahkan gestur</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.13.0"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script defer src="guide-data.js"></script>
+  <script defer src="model-loader.js"></script>
+  <script defer src="script.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#workspace">Lewati ke ruang penerjemah</a>
+<header class="site-header">
+  <a class="brand" href="#translator" aria-label="Isyarat, kembali ke awal">
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 25V13.5a2 2 0 0 1 4 0V18m0-9.5V18m0-9.5a2 2 0 0 1 4 0V18m0-8a2 2 0 0 1 4 0v8m0-5.5a2 2 0 0 1 4 0V20c0 5-3.5 8-8.5 8H16c-4.5 0-7-3-7-7"/><circle cx="9" cy="8" r="1.5"/><circle cx="15" cy="4" r="1.5"/><circle cx="21" cy="5.5" r="1.5"/><circle cx="27" cy="9" r="1.5"/></svg>
+    <span>Isyarat</span>
+  </a>
+  <nav aria-label="Navigasi utama"><a href="#translator">Terjemahkan</a><a href="#guide">Panduan</a><a href="#how">Cara pakai</a></nav>
+  <button id="theme-toggle" class="icon-button theme-toggle" type="button" aria-label="Gunakan tema gelap" title="Ganti tema">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/><circle cx="12" cy="12" r="4"/></svg>
+  </button>
+</header>
 
-    <!-- Link ke Manifest PWA -->
-    <link rel="manifest" href="manifest.json" />
+<main>
+  <section class="intro" id="translator" aria-labelledby="page-title">
+    <div class="intro-copy"><h1 id="page-title">Terjemahkan gestur menjadi pesan.</h1><p>Gunakan SIBI atau BISINDO dari kamera, susun hasilnya, lalu bacakan langsung dari browser.</p></div>
+    <div class="intro-actions"><button id="start-btn" class="primary">Mulai menerjemahkan</button><button id="retry-model-btn" hidden>Coba muat model lagi</button><span id="app-status" class="status-line" role="status" aria-live="polite" data-state="ready"><span class="status-dot" aria-hidden="true"></span><span id="app-status-text">Panduan siap. Kamera belum aktif.</span></span></div>
+  </section>
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="style.css" />
-
-    <!-- TensorFlow & MediaPipe -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.13.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-  </head>
-
-  <body>
-    <div class="app-layout">
-      <!-- Top Header -->
-      <header class="app-header">
-        <h1>Deteksi Bahasa Isyarat</h1>
-        <div class="header-controls">
-          <select id="mode-select">
-            <option value="sibi">SIBI</option>
-            <option value="bisindo">BISINDO</option>
-          </select>
-          <select id="camera-select"></select>
-          <button class="btn-icon" onclick="switchCamera()" title="Ganti Kamera">🔄</button>
+  <section class="workspace" id="workspace" aria-labelledby="workspace-title">
+    <div class="workspace-head"><div><h2 id="workspace-title">Ruang penerjemah</h2><p>Atur sistem dan kamera, lalu ikuti petunjuk posisi tangan.</p></div><div class="selectors"><label>Bahasa isyarat<select id="mode-select"><option value="sibi">SIBI</option><option value="bisindo">BISINDO</option></select></label><label>Kamera<select id="camera-select" disabled><option>Kamera belum aktif</option></select></label></div></div>
+    <div class="translator-grid">
+      <div class="camera-panel">
+        <div class="camera-frame">
+          <video id="webcam" autoplay playsinline muted></video><canvas id="output-canvas"></canvas>
+          <div class="camera-idle" id="camera-idle"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 38V21a3 3 0 0 1 6 0v7m0-14v14m0-14a3 3 0 0 1 6 0v14m0-11a3 3 0 0 1 6 0v11m0-7a3 3 0 0 1 6 0v8c0 7-5 12-13 12h-1c-7 0-10-5-10-11"/><circle cx="14" cy="13" r="2"/><circle cx="23" cy="8" r="2"/><circle cx="32" cy="10" r="2"/><circle cx="41" cy="16" r="2"/></svg><strong>Kamera belum aktif</strong><span>Izin kamera diminta setelah Anda memulai.</span></div>
+          <span id="input-mode-status" class="camera-status">Belum dimulai</span>
         </div>
-      </header>
-
-      <!-- Main Content -->
-      <main class="app-main">
-        <!-- Left Side: Video & Input Controls -->
-        <section class="video-section card">
-          <div class="video-wrapper">
-            <video id="webcam" autoplay playsinline></video>
-            <canvas id="output-canvas"></canvas>
-            <div id="input-mode-status" class="status-badge status-idle">Memuat...</div>
-          </div>
-          <div class="input-controls">
-            <button id="voice-mode-btn" class="btn btn-primary">🎤 Mode Suara</button>
-            <button id="gesture-mode-btn" class="btn btn-primary" disabled>🖐️ Mode Gestur</button>
-          </div>
-        </section>
-
-        <!-- Right Side: Dashboard & Outputs -->
-        <section class="dashboard-section">
-          <!-- Main Highlight for Detected Gesture -->
-          <div class="highlight-card card">
-            <h2 class="card-title">Karakter Terdeteksi</h2>
-            <div class="highlight-content">
-              <div id="gesture-highlight" class="highlight-letter">-</div>
-              <div id="confidence-badge" class="confidence-badge">Akurasi: 0%</div>
-            </div>
-            <p id="gesture-result" class="gesture-text">Gesture: -</p>
-          </div>
-
-          <!-- Sentence & Speech Output -->
-          <div class="output-card card">
-            <div class="card-header">
-              <h2 class="card-title">Kalimat</h2>
-              <div class="action-buttons">
-                <!-- Advanced TTS Controls -->
-                <button class="btn-icon btn-tts" onclick="speakSentence()" title="Mainkan Suara">▶️</button>
-                <button class="btn-icon btn-tts" onclick="pauseSentence()" title="Jeda Suara">⏸️</button>
-                <button class="btn-icon btn-tts" onclick="resetSentence()" title="Hapus Kalimat">🗑️</button>
-              </div>
-            </div>
-            <div id="sentence-result" class="sentence-text"></div>
-            
-            <div class="stt-status">
-              <span id="speech-result"><strong>STT:</strong> <i>Menunggu input suara...</i></span>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <div id="error-container" class="error-toast"></div>
+        <div class="mode-actions"><button id="gesture-mode-btn" disabled>Mode gestur</button><button id="voice-mode-btn" disabled>Mode suara</button><button id="switch-camera-btn" disabled>Ganti kamera</button></div>
+      </div>
+      <div class="result-panel">
+        <div class="recognition-summary"><div class="latest"><span>Token terbaru</span><strong id="gesture-highlight">—</strong></div><span id="confidence-badge" class="confidence">Akurasi 0%</span></div>
+        <p id="gesture-result" class="gesture-status" aria-live="polite">Model belum dimuat.</p>
+        <div class="message-block"><label class="message-label" for="sentence-result">Pesan Anda</label><output id="sentence-result" class="message-output">Belum ada pesan.</output><div class="edit-actions"><button id="undo-btn">Hapus terakhir</button><button id="space-btn">Tambah spasi</button><button id="clear-btn" class="text-danger">Hapus semua</button></div></div>
+        <div class="speech-panel"><div class="speech-primary"><label class="switch"><input id="tts-enabled" type="checkbox"><span aria-hidden="true"></span>Teks ke suara</label><div><button id="finish-btn" class="primary">Baca pesan</button><button id="stop-speech-btn">Hentikan</button></div></div><small id="voice-status">TTS nonaktif.</small><details class="voice-settings"><summary>Pengaturan suara</summary><div class="voice-fields"><label>Mode pembacaan<select id="tts-mode"><option value="training">Latihan: baca token</option><option value="communication">Komunikasi: baca pesan</option></select></label><label class="switch"><input id="tts-auto" type="checkbox" checked><span aria-hidden="true"></span>Baca setelah jeda 3 detik</label></div></details></div>
+        <p id="speech-result" class="stt-status" role="status" aria-live="polite"><strong>Input suara:</strong> menunggu mode suara.</p>
+      </div>
     </div>
+  </section>
 
-    <!-- Script -->
-    <script src="script.js"></script>
-  </body>
+  <section class="guide-section" id="guide" aria-labelledby="guide-title">
+    <div class="section-heading guide-copy"><div><h2 id="guide-title">Pelajari gestur yang didukung</h2><p>Telusuri foto alfabet SIBI dan BISINDO sebelum menyalakan kamera. Angka dan kosakata tertentu masih memakai penanda pengganti.</p></div><p class="notice" id="guide-notice"></p></div>
+    <div class="guide-tools"><label>Cari gestur<input id="guide-search" type="search" placeholder="A, makan, atau 3"></label><label>Kategori<select id="guide-category"><option value="all">Semua kategori</option><option value="huruf">Huruf</option><option value="angka">Angka</option><option value="kosakata">Kosakata</option></select></label></div>
+    <div class="guide-layout"><article id="guide-detail" class="guide-detail" aria-live="polite"></article><div><div id="guide-list" class="guide-list"></div><button id="guide-reset" class="guide-reset" type="button" hidden>Atur ulang pencarian</button></div></div>
+  </section>
+
+  <dialog id="guide-dialog" class="guide-dialog" aria-labelledby="guide-dialog-title"><div class="dialog-head"><h2 id="guide-dialog-title">Detail gestur</h2><button id="guide-dialog-close" class="icon-button" type="button" aria-label="Tutup detail gestur"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div id="guide-dialog-content"></div></dialog>
+
+  <section class="how" id="how" aria-labelledby="how-title"><div class="section-heading"><h2 id="how-title">Mulai dalam lima langkah</h2><p>Alur yang sama berlaku untuk latihan singkat maupun menyusun pesan.</p></div><ol><li><strong>Pilih sistem</strong><span>SIBI dan BISINDO memakai model serta kamus berbeda.</span></li><li><strong>Lihat panduan</strong><span>Pelajari posisi tangan sebelum memberi izin kamera.</span></li><li><strong>Mulai kamera</strong><span>Pastikan tangan utuh terlihat dan cahaya datang dari depan.</span></li><li><strong>Tahan gestur</strong><span>Prediksi diterima setelah keyakinan minimal 80% dan hasil stabil.</span></li><li><strong>Periksa pesan</strong><span>Edit hasil, lalu pilih “Baca pesan” saat sudah siap.</span></li></ol></section>
+
+  <section class="credits" id="credits"><div><h2>Kredit dan batas penggunaan</h2><p>Foto membantu mempelajari posisi tangan, tetapi bukan standar linguistik resmi atau jaminan model mengenali setiap gestur.</p></div><details><summary>Sumber foto dan lisensi</summary><div id="credits-list"></div></details></section>
+</main>
+<div id="error-container" class="toast" role="alert"></div>
+<footer><div class="footer-inner"><a class="brand footer-brand" href="#translator"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 25V13.5a2 2 0 0 1 4 0V18m0-9.5V18m0-9.5a2 2 0 0 1 4 0V18m0-8a2 2 0 0 1 4 0v8m0-5.5a2 2 0 0 1 4 0V20c0 5-3.5 8-8.5 8H16c-4.5 0-7-3-7-7"/></svg><span>Isyarat</span></a><p>Penerjemah dan panduan belajar SIBI/BISINDO berbasis MediaPipe dan TensorFlow.js.</p></div></footer>
+<nav class="mobile-nav" aria-label="Navigasi mobile"><a href="#workspace"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17V8a2 2 0 0 1 4 0v5m0-8v8m0-8a2 2 0 0 1 4 0v8m0-6a2 2 0 0 1 4 0v6m0-3a2 2 0 0 1 4 0v4c0 4-3 7-8 7h-1c-4 0-7-3-7-7"/></svg><span>Terjemahkan</span></a><a href="#guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11a3 3 0 0 1 3 3v15a3 3 0 0 0-3-3H4Zm16 0A2.5 2.5 0 0 0 17.5 3H14v18a3 3 0 0 1 3-3h3Z"/></svg><span>Panduan</span></a><a href="#how"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11 12 14 22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Cara pakai</span></a></nav>
+</body>
 </html>

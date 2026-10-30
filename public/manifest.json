@@ -1,20 +1,9 @@
 {
-  "name": "Nama Website",
-  "short_name": "WebKu",
+  "name": "Isyarat — Penerjemah SIBI dan BISINDO",
+  "short_name": "Isyarat",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
-  "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+  "background_color": "#f4f0e7",
+  "theme_color": "#17352d",
+  "description": "Panduan dan penerjemah gestur SIBI/BISINDO berbasis browser."
 }
